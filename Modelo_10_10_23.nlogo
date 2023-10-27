@@ -1,31 +1,31 @@
 globals [d_l ing_l  pob_l price_l ]
 
-breed [hogares hogar]        ; Define el tipo de agente "ciudadano-rico"
-breed [inmobiliarias inmobiliaria]             ; Define el tipo de agente "inmobiliaria"
-breed [gobierno gobernante]                    ; Define el tipo de agente "gobierno"
-breed [manzanas manzana]                    ; Define el tipo de agente "gobierno"
+breed [homes hom]        ; Define el tipo de agente "ciudadano-rico"
+breed [real_estates real_estate]             ; Define el tipo de agente "inmobiliaria"
+breed [government Governor]                    ; Define el tipo de agente "government"
+breed [blocks blocka]                    ; Define el tipo de agente "gobierno"
 
-hogares-own [
-  ingresos
-  educacion
-  utilidad
-  vivienda
-  preferencias
+homes-own [
+  income
+  education
+  utility_function
+  house
+  preference
   raw-income ; borrarla
 ]
-inmobiliarias-own[
-localizacion
-ganancia
-demanda
+real_estates-own[
+location
+profit
+demand
 
 ]
 
 patches-own[
 price
 kind
-cuartos
-superficie
-idh
+beds
+area
+hdi
 house_0 ; houses withou home
 house_1 ; houses with home
 houses  ; number of  houses
@@ -33,56 +33,58 @@ d       ; distance tu center
 income_mean ; mean of incomen of homes in the patch
 ]
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  BEGINNING OF THE SETUP ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 to setup
   clear-all                    ; Limpia la interfaz y la memoria
 
 ;   Configuración global
 ;  set tamano-ciudad 30         ; Tamaño de la ciudad en parches
-;  set tamano-vivienda-pobre 1  ; Tamaño de la vivienda para ciudadanos pobres en parches
-;  set tamano-vivienda-rica 2   ; Tamaño de la vivienda para ciudadanos ricos en parches
+;  set tamano-house-pobre 1  ; Tamaño de la house para ciudadanos pobres en parches
+;  set tamano-house-rica 2   ; Tamaño de la house para ciudadanos ricos en parches
 ;
   ; Configuración de los parches
   ask patches
-  [;; Create de idh value for blocks
+  [;; Create de hdi value for blocks
     set d distance-to-center pxcor pycor
-    set idh (1 - (d / max-distance-world))
+    set hdi (1 - (d / max-distance-world))
    ;;; Asing the type of house in the blocks, in t=0  there hare two types of block 1 and 0 type = 1  All house are rich, tyoe = 0 all de house are poor
-  ifelse random-float 1.0 < idh * 0.95 + 0.1 ; Esto da un 20% de no correspondencia
+  ifelse random-float 1.0 < hdi * 0.95 + 0.1 ; Esto da un 20% de no correspondencia
   [set kind 1]  [set kind 0]
 
 
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Viviendas por manzana
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; houses por manzana
 
     ; Asigna un valor aleatorio con distribución normal a la primitiva patch.
     set houses round(random-normal 7 2)
 
-    ; Genera un porcentaje aleatorio entre 15 y 25.
-    let porcentaje_0 random-float 10 + 15 ; esto generará un número entre 15 y 25.
+    ; Genera un percentage aleatorio entre 15 y 25.
+    let percentage_0 random-float 10 + 15 ; esto generará un número entre 15 y 25.
 
-    ; Calcula cuánto de 'casas' va a 'casas_0' basado en el porcentaje.
-    set house_0 round(houses * (porcentaje_0 / 100))
+    ; Calcula cuánto de 'casas' va a 'casas_0' basado en el percentage.
+    set house_0 round(houses * (percentage_0 / 100))
 
     ; El resto de 'casas' va a 'casas_1'.
     set house_1 houses - house_0
 
    ]
-  ask patches[sprout-hogares  house_1 [
+  ask patches[sprout-homes  house_1 [
       set shape "person"  ; Asegúrate de que "persona" es el nombre de la forma en tu Shapefile.
       set color blue      ; O cualquier otro color de tu elección.
       let alpha 0.5 ; solo un valor inicial, ajusta según necesidad
       let beta 2  ; solo un valor inicial, ajusta según necesidad
       set raw-income random-gamma alpha beta
-      ;set ingresos raw-income ;(rescale raw-income 0 max [ingresos] of turtles 2000 500000)
-      set ingresos rescale raw-income 0 max [raw-income] of turtles 3000 500000
-      reasignar-vivienda
+      ;set income raw-income ;(rescale raw-income 0 max [income] of turtles 2000 500000)
+      set income rescale raw-income 0 max [raw-income] of turtles 3000 500000
+      reassign-house
     ]
   ]
    ;ask patches with [kind = 1] [set pcolor blue]
-   ;print max [ingresos] of hogares
+   ;print max [income] of homes
    print word "el máximo de la funcion gamma es: "  max [raw-income] of turtles
-   print word "el ingreso máximo es: "  max [ingresos] of turtles
-  print word "el ingreso promedio es: " mean [ingresos] of turtles
+   print word "el ingreso máximo es: "  max [income] of turtles
+  print word "el ingreso promedio es: " mean [income] of turtles
   print word "el indice de Gini es: "  calculate-gini
   print word "la distancia más lejanna es: " max[d] of patches
 
@@ -90,58 +92,42 @@ to setup
   let n count turtles-here
  set house_1  n
   set pcolor scale-color green house_1    0 10
-  ingreso-promedio
-  precio-vivienda]
-   g_ingresos
-   g_poblacion
+  average-income
+  house-price]
+   g_income
+   g_population
   g_price
  ;
 reset-ticks
 end
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;; SETUP PROCEDURES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-to ingreso-promedio
-; obtén una lista de ingresos de los hogares en este parche
-      let lista-ingresos [ingresos] of turtles-here with [ breed = hogares ]
-      set income_mean 0
-      if not empty? lista-ingresos  [ ; asegúrate de que hay al menos un hogar en el patch
-      set income_mean (mean lista-ingresos)]
-      ;set pcolor scale-color green idh 0 1
-
-
-end
-
-to reasignar-vivienda
+to reassign-house
   let max-distance max [d] of patches
 let segment-distance max-distance / 4
   ; Define los límites de cada anillo
 ; Define los límites de cada anillo
-let anillo1 list 0 segment-distance
-let anillo2 list segment-distance (2 * segment-distance)
-let anillo3 list (2 * segment-distance) (3 * segment-distance)
-let anillo4 list (3 * segment-distance) max-distance
-let anillos (list anillo1 anillo2 anillo3 anillo4)
-  ifelse ingresos < 50000 [
-                                                                       move-to one-of patches with [d >= first anillo4 and d < last anillo4]
+let ring1 list 0 segment-distance
+let ring2 list segment-distance (2 * segment-distance)
+let ring3 list (2 * segment-distance) (3 * segment-distance)
+let ring4 list (3 * segment-distance) max-distance
+let rings (list ring1 ring2 ring3 ring4)
+  ifelse income < 50000 [
+                                                                       move-to one-of patches with [d >= first ring4 and d < last ring4]
                            ] [
-                         ifelse (ingresos >= 50000 and ingresos < 100000) [move-to one-of patches with [d >= first anillo3 and d < last anillo3]
+                         ifelse (income >= 50000 and income < 100000) [move-to one-of patches with [d >= first ring3 and d < last ring3]
                           ] [
-                         ifelse ingresos >= 100000 and ingresos < 200000 [move-to one-of patches with [d >= first anillo2 and d < last anillo2]
+                         ifelse income >= 100000 and income < 200000 [move-to one-of patches with [d >= first ring2 and d < last ring2]
                           ]  [
-                                                                         move-to one-of patches with [d >= first anillo1 and d < last anillo1]
+                                                                         move-to one-of patches with [d >= first ring1 and d < last ring1]
       ]
      ]
     ]
 end
 
-
-to color-poblacion
-  ask patches [
-
-      set pcolor scale-color green house_1 0 10]
-end
- to precio-vivienda
+to house-price
 
 ifelse income_mean <= 5000 [
   set price (100000 + random 200000) ; aleatorio entre 100 mil y 300 mil
@@ -164,7 +150,7 @@ ifelse income_mean <= 5000 [
             ifelse income_mean > 50000 and income_mean <= 100000 [
               set price (2700000 + random 700000) ; aleatorio entre 2.7 millones y 3.4 millones
             ] [
-              ; Para ingresos mayores a 100,000
+              ; Para income mayores a 100,000
               set price (5000000 + random-normal 0 1000000)
             ]
           ]
@@ -176,6 +162,43 @@ ifelse income_mean <= 5000 [
 
 
 end
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  END OF THE SETUP ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  BEGINNING OF THE GO ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  END OF THE GO ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;; GLOBAL PROCEDURES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+to average-income
+; obtén una lista de income de los homes en este parche
+      let list-income [income] of turtles-here with [ breed = homes ]
+      set income_mean 0
+      if not empty? list-income  [ ; asegúrate de que hay al menos un home en el patch
+      set income_mean (mean list-income)]
+      ;set pcolor scale-color green hdi 0 1
+end
+
+to color-poblacion
+  ask patches [
+
+      set pcolor scale-color green house_1 0 10]
+end
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -204,40 +227,29 @@ end
 
 
 to-report calculate-gini
-  let incomes sort [ingresos] of turtles ; ordenar ingresos de menor a mayor
+  let incomes sort [income] of turtles ; ordenar income de menor a mayor
   let n count turtles
-  let total-income sum incomes
+  let total-ing sum incomes
   let lorentz-sum 0
 
   ;; Construir y sumar áreas bajo la curva de Lorenz
   let running-total 0
   foreach incomes [
-    income ->
-    set running-total running-total + income
-    set lorentz-sum lorentz-sum + (running-total / total-income)
+    ing ->
+    set running-total running-total + ing
+    set lorentz-sum lorentz-sum + (running-total / total-ing)
   ]
 
   ;; Calcular el índice de Gini
   let gini 1 - (2 / n) * lorentz-sum
   report gini
 end
-to-report acomodar-tortugas [patch-destino lista-tortugas]
-  let capacidad [house_1] of patch-destino
-  let tortugas-a-mover min (list capacidad length lista-tortugas)
 
-  repeat tortugas-a-mover [
-    ask item 0 lista-tortugas [
-      move-to patch-destino
-    ]
-    set lista-tortugas but-first lista-tortugas
-  ]
-
-  report lista-tortugas ; Devuelve las tortugas que no se movieron
-end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  GRÁFICAS  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  PLOTS  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-to g_ingresos
+to g_income
   let d_m max [d] of patches
   let di []
   let r 10
@@ -252,7 +264,7 @@ to g_ingresos
   set d_l but-first di
   end
 
-to g_poblacion
+to g_population
   let d_m max [d] of patches
   let di []
   let r 16
@@ -281,7 +293,6 @@ to g_price
   set price_l n-values s [i -> lput (mean[price] of patches with [(d >= item 0 item i d_l) and (d < item 0 item (i + 1) d_l) ]) price_l]
   set d_l but-first di
   end
-
 
 
 
@@ -344,9 +355,9 @@ NIL
 10.0
 true
 false
-"set-plot-x-range (min [ingresos] of hogares)  (max [ingresos] of hogares)\nset-plot-y-range 0 count hogares\nset-histogram-num-bars 20" "set-plot-x-range (min [ingresos] of hogares)  (max [ingresos] of hogares)\nset-plot-y-range 0 count hogares\nset-histogram-num-bars 20"
+"set-plot-x-range (min [income] of homes)  (max [income] of homes)\nset-plot-y-range 0 count homes\nset-histogram-num-bars 20" "set-plot-x-range (min [income] of homes)  (max [income] of homes)\nset-plot-y-range 0 count homes\nset-histogram-num-bars 20"
 PENS
-"default" 1.0 2 -16777216 true "" "histogram [ingresos] of hogares"
+"default" 1.0 2 -16777216 true "" "histogram [income] of homes"
 
 PLOT
 930
@@ -364,7 +375,7 @@ true
 false
 "" ""
 PENS
-"Lorenz Curve" 1.0 0 -7500403 true "let incomes sort [ingresos] of turtles\nlet total-income sum incomes\nlet running-total 0\nlet population-fraction 0\nlet n count turtles\n\nset-current-plot-pen \"Lorenz Curve\"\n; Comienza en el origen\nplotxy 0 0 \n\nforeach incomes [\n  income -> \n  set running-total running-total + income\n  set population-fraction population-fraction + (1 / n)\n  plotxy population-fraction (running-total / total-income)\n]" "let incomes sort [ingresos] of turtles\nlet total-income sum incomes\nlet running-total 0\nlet population-fraction 0\nlet n count turtles\n\nset-current-plot-pen \"Lorenz Curve\"\n; Comienza en el origen\nplotxy 0 0 \n\nforeach incomes [\n  income -> \n  set running-total running-total + income\n  set population-fraction population-fraction + (1 / n)\n  plotxy population-fraction (running-total / total-income)\n]"
+"Lorenz Curve" 1.0 0 -7500403 true "let incomes sort [income] of turtles\nlet total-income sum incomes\nlet running-total 0\nlet population-fraction 0\nlet n count turtles\n\nset-current-plot-pen \"Lorenz Curve\"\n; Comienza en el origen\nplotxy 0 0 \n\nforeach incomes [\n  ing -> \n  set running-total running-total + ing\n  set population-fraction population-fraction + (1 / n)\n  plotxy population-fraction (running-total / total-income)\n]" "let incomes sort [income] of turtles\nlet total-income sum incomes\nlet running-total 0\nlet population-fraction 0\nlet n count turtles\n\nset-current-plot-pen \"Lorenz Curve\"\n; Comienza en el origen\nplotxy 0 0 \n\nforeach incomes [\n  ing -> \n  set running-total running-total + ing\n  set population-fraction population-fraction + (1 / n)\n  plotxy population-fraction (running-total / total-income)\n]"
 "Equality Line" 1.0 0 -2674135 true "\nset-current-plot-pen \"Equality Line\"\nplotxy 0 0\nplotxy 1 1" ""
 
 MONITOR
