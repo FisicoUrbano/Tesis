@@ -94,6 +94,7 @@ to setup
   set pcolor scale-color green house_1    0 10
   average-income
   house-price]
+  income-education
    g_income
    g_population
   g_price
@@ -159,8 +160,29 @@ ifelse income_mean <= 5000 [
     ]
   ]
 ]
+end
+to income-education
+  ;;;;;;; We obtain de medean of home's income
 
+  let MedianIncome median-income
+  ask homes[
+  if income <= 0.5 *  MedianIncome [ set education ceiling ( random-float 6)]
+  if income > 0.5 *  MedianIncome and income  <=  MedianIncome [set education ceiling (6 + random-float 3)]
+  if income > MedianIncome and income <= (3 / 2) * MedianIncome [set education ceiling (9 + random-float 3)]
+  if income > (3 / 2) * MedianIncome and income <= 2 * MedianIncome [set education ceiling (12 + random-float 4)]
+  if income >  2 * MedianIncome [set education ceiling (16 + random-float 6)]
+  ]
+end
+to-report median-income
+  let list-income [income] of homes
+  let list-sort sort list-income
+  let middle length list-sort / 2
 
+  ifelse length list-sort mod 2 = 0 [
+    report (item (middle - 1) list-sort + item middle list-sort) / 2
+  ] [
+    report item middle list-sort
+  ]
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  END OF THE SETUP ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -171,9 +193,21 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  BEGINNING OF THE GO ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+to GO
+;  live the city ;; The homers walk around the city for leisure.
+;  choose-house ;; The new home in the city choose som plaece to call home.
+;  mortgage     ;; Report the number of tickets and finish de mortgae.
+;  migration    ;; The homers decide change the house that generate a mayor satisfaction, maybe some homes leave the city  for different razons.
+;  demand       ;; Thea real state review the zones with most demand to built more houses.
+;  hoisung-price ;; Update de housing price considering suppy and demand.
+end
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;; SETUP PROCEDURES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
+to choose-house
+end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  END OF THE GO ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
