@@ -37,7 +37,7 @@ patches-own[
   utilidad_idh
 ]
 
-;;;;;;;;;;; Empezamos por las condiciones iniciales del modelo ;;;;;;;;;;
+;
 to setup
   clear-all                    ; Limpia la interfaz y la memoria
 
